@@ -27,7 +27,7 @@ public class PollController {
                 poll.setId(null);
             }
         } catch (Exception ignored) {
-            // If Poll uses primitive id (long), this will be a no-op; client-side fix should be applied
+           
         }
 
         Poll created = pollService.createPoll(poll);

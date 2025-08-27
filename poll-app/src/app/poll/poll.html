@@ -1,39 +1,74 @@
-<div class="mt-4">
-  <h2 class="text-center">Create Poll</h2>
-  <div class="mb-3">
+<div class="max-w-5xl mx-auto p-6">
+  <header class="flex items-center justify-between mb-8">
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-700">Vote-Poll</h1>
+    <p class="text-sm text-gray-500">Create polls & collect votes</p>
+  </header>
+  <div class="mb-4">
+    <label class="block text-sm font-medium text-gray-600 mb-1" for="question">Poll question</label>
     <input
+      id="question"
       [(ngModel)]="newPoll.question"
-      placeholder="Poll question"
-      class="focus:border-blue-500 border"
+      placeholder="e.g. Which feature should we build next?"
+      class="w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500"
       required
     />
   </div>
 
-  <div class="container mb-3">
-    <div *ngFor="let option of newPoll.options; let i = index" class="group">
+  <div class="mb-3 space-y-1.5">
+    <label class="block text-sm font-medium text-gray-600 mb-2">Options</label>
+    <div 
+    *ngFor="let option of newPoll.options; let i = index"
+    >
       <input
         [(ngModel)]="option.voteOption"
-        placeholder="Option"
-        class="focus:border-blue-500 border"
+        placeholder="Option text"
+        class=" w-full flex-1 px-3 py-2 rounded-md border focus:outline-none focus:ring-2 focus:ring-indigo-100"
         required
       />
+      <button 
+      class="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors
+              border bg-white hover:bg-red-500 hover:text-white text-red-600 border-red-100 shadow-sm" 
+      *ngIf="newPoll.options.length > 2"
+      (click)="newPoll.options.splice(i, 1)"
+      >
+      Remove</button>
     </div>
   </div>
+  <div class="mt-3 flex gap-3">
+    <button 
+    (click)="addOption()" 
+    class="px-3 py-2 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 shadow-sm"
+    >
+    Add another options
+    </button>
 
-  <button (click)="createPoll()" class="bg-blue-600 text-white px-2 py-1 rounded-md">Create Poll</button>
-
+    <button 
+    (click)="createPoll()"
+    [disabled]="isCreateDisabled()"
+    class="px-4 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+    Create Poll
+    </button>
+    <button
+    class="px-3 py-2 rounded-md border bg-white text-sm text-gray-700 hover:bg-gray-50"
+    (click)="resetPoll()"
+    >
+    Reset
+  </button>
+  </div>
+  
   <div class="mt-3 pt-10">
     <h2 class="text-2xl font-semibold mb-6 text-gray-800">Available Polls</h2>
   </div>
 
   <section class="space-y-8">
-    <article *ngFor="let poll of polls; trackBy: trackByIndex" class="bg-white shadow-md rounded-lg p-6 border border-gray-200">
+    <article *ngFor="let poll of polls(); trackBy: trackByIndex" class="bg-white shadow-md rounded-lg p-6 border border-gray-200">
       <h3 class="text-xl font-semibold text-indigo-700 mb-4">{{ poll.question }}</h3>
       <ul class="space-y-2">
         <li *ngFor="let option of poll.options; let j = index">
           <button
             class="w-full text-left px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-medium rounded-md transition duration-200"
-            (click)="vote(poll.id, j)"
+            (click)="vote(poll.id!, j)"
           >
             {{ option.voteOption }} <span class="text-sm text-gray-600">({{ option.voteCount }} votes)</span>
           </button>

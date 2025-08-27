@@ -1,8 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, Signal } from '@angular/core';
 import { PollService } from '../poll.service';
 import { Poll } from '../poll.models';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 
 
 @Component({
@@ -13,50 +14,60 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./poll.css']
 })
 export class PollComponent implements OnInit {
+  polls = signal<Poll[]>([]);
+  
   newPoll: Poll = {
-    id: 0,
+    id: null,
     question: '',
     options: [
       { voteOption: '', voteCount: 0 },
-      { voteOption: '', voteCount: 0 }
-    ]
+      { voteOption: '', voteCount: 0 },
+    ],
   };
-  
-  polls: Poll[] = [];
+    
+  private subs = new Subscription();
 
-  constructor(private pollService: PollService) {
+  constructor(private pollService: PollService) {}
 
-  }
-  ngOnInit(): void {
-      this.loadPolls();
-  }
-
-  loadPolls() {
-    this.pollService.getPolls().subscribe({
-      next: (data) => {
-        this.polls = data;
+  ngOnInit() {
+       const sig = this.pollService.getPolls().subscribe({
+      next: (data: Poll[]) => {
+        this.polls.set(data ?? []);
       },
-      error: (error) => {
-        console.error("Error fetching polls data: ", error);
-      }
-    })
-  }
-
-  createPoll() {
-    this.pollService.createPoll(this.newPoll).subscribe({
-      next: (createdPoll) => {
-        this.polls.push(createdPoll);
-        this.resetPoll();
-      },
-      error: (error) => {
-        console.error('Error making polls:', error);
+      error: (error: Error) => {
+        console.error('Failed to load polls', error);
       }
     });
+    this.subs.add(sig);
+  }
+
+  ngOnDestroy() {
+    this.subs.unsubscribe();
+  }
+
+ 
+  createPoll() {
+    const { id, ...payload } = this.newPoll as Poll;
+    const s = this.pollService.createPoll(payload).subscribe({
+      next: (created: Poll) => {
+        this.polls.update(arr => [...arr, created]);
+        this.newPoll = {
+          id: null,
+          question: '',
+          options: [
+            { voteOption: '', voteCount: 0 },
+            { voteOption: '', voteCount: 0 },
+          ]
+        };
+      },
+      error: (err) => console.error('Error creating poll', err)
+    });
+    this.subs.add(s);
   }
 
   resetPoll() {
     this.newPoll = {
-      id: 0,
+      id: null,
     question: '',
     options: [
       { voteOption: '', voteCount: 0 },
@@ -65,18 +76,38 @@ export class PollComponent implements OnInit {
     };
   }
 
+  isCreateDisabled(): boolean {
+    const q = (this.newPoll?.question ?? '').trim();
+    const options = this.newPoll?.options ?? [];
+    const validOptions = options.filter(o => (o?.voteOption ?? '').trim().length > 0);
+    return q.length === 0 || validOptions.length < 2;
+  }
+
+  addOption() {
+    const maxOption = 5;
+    if (this.newPoll.options.length >= maxOption) {
+      window.alert(`Max of ${maxOption} options reached`);
+      return;
+    }
+    this.newPoll.options.push({ voteOption: '', voteCount: 0 });
+  }
+
   vote(pollId: number, optionIndex: number) {
-    this.pollService.vote(pollId, optionIndex).subscribe({
+    const s = this.pollService.vote(pollId, optionIndex).subscribe({
       next: () => {
-        const poll = this.polls.find(p => p.id === pollId);
-        if (poll) {
-          poll.options[optionIndex].voteCount++;
-        }
+        this.polls.update(list => list.map(p => {
+          if (p.id !== pollId) return p;
+          const updatedOptions = p.options.map((opt, idx) =>
+            idx === optionIndex ? { ...opt, voteCount: opt.voteCount + 1 } : opt
+          );
+          return { ...p, options: updatedOptions };
+        }));
       },
-      error: (error) => {
-        console.error("Error voting on a poll: ", error);
+      error: (err) => {
+        console.error('Vote failed', err);
       }
-    })
+    });
+    this.subs.add(s);
   }
 
   trackByIndex(index: number): Number {
