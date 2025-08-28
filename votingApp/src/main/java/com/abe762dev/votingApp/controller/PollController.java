@@ -27,7 +27,7 @@ public class PollController {
                 poll.setId(null);
             }
         } catch (Exception ignored) {
-           
+
         }
 
         Poll created = pollService.createPoll(poll);
