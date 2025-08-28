@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/polls")
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "${frontend.url}")
 public class PollController {
     private final PollService pollService;
 
