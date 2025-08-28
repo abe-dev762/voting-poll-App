@@ -1,0 +1,1 @@
+declare const NG_APP_API_URL: string;
