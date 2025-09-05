@@ -5,3 +5,4 @@
 .env
 .gitignore
 /node_modules
+Docker-compose.yml

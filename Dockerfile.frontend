@@ -1,0 +1,17 @@
+FROM node:20 AS build
+
+WORKDIR /app
+
+COPY poll-app/package*.json ./
+
+RUN npm install
+
+COPY poll-app/ .
+
+RUN npm run build -- --configuration=production
+
+FROM nginx:1.25-alpine
+COPY --from=build /app/dist/poll-app/browser /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
